@@ -55,8 +55,30 @@
             box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
         }
 
-        .chat-input input[type="file"] {
+        .upload-container {
+            display: flex;
+            align-items: center;
             margin-right: 10px;
+        }
+
+        .upload-container input[type="file"] {
+            display: none; /* Hide the default file input */
+        }
+
+        .upload-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            background-color: #007BFF;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-right: 10px;
+        }
+
+        .upload-button:hover {
+            background-color: #0056b3;
         }
 
         .chat-input button {
@@ -97,6 +119,12 @@
             align-self: flex-start;
         }
 
+        .success-message {
+            color: green;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
         @keyframes fadeIn {
             to {
                 opacity: 1;
@@ -130,6 +158,10 @@
             .chat-input button {
                 font-size: 14px;
             }
+
+            .upload-button {
+                font-size: 14px;
+            }
         }
     </style>
 </head>
@@ -139,10 +171,14 @@
         <div id="chat-box" class="chat-box"></div>
 
         <div class="chat-input">
-            <input type="file" id="csvInput" accept=".csv" onchange="handleCSVUpload()">
+            <div class="upload-container">
+                <label class="upload-button" for="csvInput">Upload CSV</label>
+                <input type="file" id="csvInput" accept=".csv" onchange="handleCSVUpload()">
+            </div>
             <input type="text" id="userInput" placeholder="Type 'predict X'..." onkeypress="handleKeyPress(event)">
             <button onclick="processInput()">Send</button>
         </div>
+        <div id="uploadMessage" class="success-message"></div>
     </div>
 
     <!-- Load TensorFlow.js -->
@@ -251,6 +287,7 @@
             await model.fit(xsTensor, ysTensor, { epochs: 250 });
 
             addBotMessage(`Model trained on CSV data with ${xs.length} points.`);
+            document.getElementById('uploadMessage').textContent = "CSV uploaded and model trained successfully!";
         }
 
         // Function to predict Y value
@@ -274,4 +311,4 @@
     </script>
 
 </body>
-</html>
+</
