@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat-style Linear Regression Model</title>
+    <title>Chat-style Linear Regression Model with CSV Importer</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -42,7 +42,7 @@
             border-top: 1px solid #ddd;
         }
 
-        .chat-input input {
+        .chat-input input[type="text"] {
             flex-grow: 1;
             border: none;
             border-radius: 20px;
@@ -52,6 +52,10 @@
             margin-right: 10px;
             background-color: white;
             box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-input input[type="file"] {
+            margin-right: 10px;
         }
 
         .chat-input button {
@@ -118,7 +122,7 @@
                 height: 90%;
             }
 
-            .chat-input input {
+            .chat-input input[type="text"] {
                 font-size: 14px;
             }
 
@@ -134,7 +138,8 @@
         <div id="chat-box" class="chat-box"></div>
 
         <div class="chat-input">
-            <input type="text" id="userInput" placeholder="Type 'train X,Y' or 'predict X'..." onkeypress="handleKeyPress(event)">
+            <input type="file" id="csvInput" accept=".csv" onchange="handleCSVUpload()">
+            <input type="text" id="userInput" placeholder="Type 'predict X'..." onkeypress="handleKeyPress(event)">
             <button onclick="processInput()">Send</button>
         </div>
     </div>
@@ -190,17 +195,7 @@
             addUserMessage(userInput);
 
             // Process the input
-            if (userInput.startsWith('train')) {
-                const data = userInput.replace('train', '').trim();
-                const [trainX, trainY] = data.split(',').map(Number);
-
-                if (isNaN(trainX) || isNaN(trainY)) {
-                    addBotMessage('Please provide valid X and Y values.');
-                    return;
-                }
-
-                trainModel(trainX, trainY);
-            } else if (userInput.startsWith('predict')) {
+            if (userInput.startsWith('predict')) {
                 const x = parseFloat(userInput.replace('predict', '').trim());
                 if (isNaN(x)) {
                     addBotMessage('Please provide a valid X value for prediction.');
@@ -209,20 +204,52 @@
 
                 predict(x);
             } else {
-                addBotMessage('Please enter either "train X,Y" or "predict X".');
+                addBotMessage('Please enter "predict X" to make a prediction.');
             }
         }
 
-        // Function to train the model
-        async function trainModel(trainX, trainY) {
-            const xs = tf.tensor2d([trainX], [1, 1]);
-            const ys = tf.tensor2d([trainY], [1, 1]);
+        // Function to handle CSV upload
+        function handleCSVUpload() {
+            const fileInput = document.getElementById('csvInput');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const csvData = event.target.result;
+                    trainModelFromCSV(csvData);
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        // Function to train the model from CSV data
+        async function trainModelFromCSV(csvData) {
+            const rows = csvData.split('\n').map(row => row.split(',').map(Number));
+
+            const xs = [];
+            const ys = [];
+
+            rows.forEach(row => {
+                if (row.length === 2 && !isNaN(row[0]) && !isNaN(row[1])) {
+                    xs.push(row[0]);
+                    ys.push(row[1]);
+                }
+            });
+
+            if (xs.length === 0) {
+                addBotMessage('No valid data found in CSV.');
+                return;
+            }
+
+            const xsTensor = tf.tensor2d(xs, [xs.length, 1]);
+            const ysTensor = tf.tensor2d(ys, [ys.length, 1]);
 
             if (!model) await createModel();
 
-            await model.fit(xs, ys, { epochs: 250 });
+            await model.fit(xsTensor, ysTensor, { epochs: 250 });
 
-            addBotMessage(`Model trained on X: ${trainX}, Y: ${trainY}`);
+            addBotMessage(`Model trained on CSV data with ${xs.length} points.`);
         }
 
         // Function to predict Y value
