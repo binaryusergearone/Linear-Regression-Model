@@ -3,312 +3,316 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat-style Linear Regression Model with CSV Importer</title>
+    <title>TensorFlow CSV Prediction Model</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+            background-color: #f7f8fc;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
         }
 
-        .chat-container {
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            height: 80%;
-            width: 100%;
-            max-width: 600px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
 
         .chat-box {
+            height: 400px;
             padding: 20px;
-            overflow-y: auto;
-            flex-grow: 1;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .chat-input {
+            overflow-y: scroll;
             display: flex;
-            align-items: center;
-            padding: 10px;
-            background-color: #f1f1f1;
-            border-top: 1px solid #ddd;
-        }
-
-        .chat-input input[type="text"] {
-            flex-grow: 1;
-            border: none;
-            border-radius: 20px;
-            padding: 10px 15px;
-            font-size: 16px;
-            outline: none;
-            margin-right: 10px;
-            background-color: white;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .upload-container {
-            display: flex;
-            align-items: center;
-            margin-right: 10px;
-        }
-
-        .upload-container input[type="file"] {
-            display: none; /* Hide the default file input */
-        }
-
-        .upload-button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 20px;
-            background-color: #007BFF;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            margin-right: 10px;
-        }
-
-        .upload-button:hover {
-            background-color: #0056b3;
-        }
-
-        .chat-input button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 20px;
-            background-color: #007BFF;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .chat-input button:hover {
-            background-color: #0056b3;
+            flex-direction: column;
+            gap: 15px;
         }
 
         .message {
-            padding: 10px 20px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            max-width: 75%;
+            font-size: 15px;
+            line-height: 1.4;
             word-wrap: break-word;
-            display: inline-block;
-            opacity: 0;
-            animation: fadeIn 0.5s forwards;
         }
 
-        .user-message {
-            background-color: #007BFF;
-            color: white;
-            align-self: flex-end;
-        }
-
-        .bot-message {
-            background-color: #f1f1f1;
-            color: #333;
+        .bot {
+            background-color: #ececec;
             align-self: flex-start;
         }
 
-        .success-message {
-            color: green;
+        .user {
+            background-color: #007bff;
+            color: #fff;
+            align-self: flex-end;
+        }
+
+        .input-container {
+            display: flex;
+            border-top: 1px solid #ececec;
+            padding: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            outline: none;
             font-size: 14px;
-            margin-top: 5px;
         }
 
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-            }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            font-size: 14px;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
 
-        /* Scrollbar styling for chatbox */
-        .chat-box::-webkit-scrollbar {
-            width: 6px;
+        button:hover {
+            background-color: #0056b3;
         }
 
-        .chat-box::-webkit-scrollbar-thumb {
-            background-color: #ddd;
+        .upload-btn-wrapper {
+            text-align: center;
+            padding: 15px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn-wrapper button {
+            padding: 10px 30px;
+        }
+
+        .popup-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9;
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
             border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+            z-index: 10;
         }
 
-        .chat-box::-webkit-scrollbar-track {
-            background-color: transparent;
+        .popup h2 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .popup p {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .close-btn {
+            display: inline-block;
+            margin-top: 10px;
+            background: #007bff;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            background-color: #0056b3;
         }
 
         @media (max-width: 768px) {
-            .chat-container {
+            .container {
+                margin: 10px;
                 width: 90%;
-                height: 90%;
             }
 
-            .chat-input input[type="text"] {
-                font-size: 14px;
+            .chat-box {
+                height: 300px;
             }
 
-            .chat-input button {
-                font-size: 14px;
+            .input-container input[type="text"] {
+                font-size: 12px;
             }
 
-            .upload-button {
-                font-size: 14px;
+            .input-container button {
+                font-size: 12px;
+                padding: 8px 15px;
             }
         }
     </style>
 </head>
 <body>
 
-    <div class="chat-container">
-        <div id="chat-box" class="chat-box"></div>
-
-        <div class="chat-input">
-            <div class="upload-container">
-                <label class="upload-button" for="csvInput">Upload CSV</label>
-                <input type="file" id="csvInput" accept=".csv" onchange="handleCSVUpload()">
-            </div>
-            <input type="text" id="userInput" placeholder="Type 'predict X'..." onkeypress="handleKeyPress(event)">
-            <button onclick="processInput()">Send</button>
+    <div class="container">
+        <div class="chat-box" id="chat-box">
+            <div class="message bot">Model ready for training. Please upload a CSV file.</div>
         </div>
-        <div id="uploadMessage" class="success-message"></div>
+
+        <div class="upload-btn-wrapper">
+            <button>Upload CSV</button>
+            <input type="file" id="csv-file" accept=".csv" onchange="handleCSVUpload()" />
+        </div>
+
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Type 'predict X'..." onkeypress="handleKeyPress(event)">
+            <button onclick="handleUserInput()">Send</button>
+        </div>
+
+        <div class="upload-btn-wrapper">
+            <button onclick="showPopup()">About the Model</button>
+        </div>
+
     </div>
 
-    <!-- Load TensorFlow.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <!-- Popup Window -->
+    <div class="popup-backdrop" id="popup-backdrop"></div>
+    <div class="popup" id="popup">
+        <h2>TensorFlow CSV Prediction Model</h2>
+        <p>This model uses TensorFlow.js to predict a Y value for a given X using data from the uploaded CSV file. The model employs linear regression to fit the data points.</p>
+        <p><strong>Developer:</strong> Asif</p>
+        <button class="close-btn" onclick="closePopup()">Close</button>
+    </div>
 
     <script>
+        let csvData = [];
         let model;
 
-        // Function to create and compile the model
-        async function createModel() {
-            model = tf.sequential();
-            model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
-
-            model.compile({
-                optimizer: 'sgd',
-                loss: 'meanSquaredError'
-            });
-        }
-
-        // Add user message to chat
-        function addUserMessage(message) {
-            const chatBox = document.getElementById('chat-box');
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', 'user-message');
-            messageElement.textContent = message;
-
-            chatBox.appendChild(messageElement);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        // Add bot message to chat
-        function addBotMessage(message) {
-            const chatBox = document.getElementById('chat-box');
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', 'bot-message');
-            messageElement.textContent = message;
-
-            chatBox.appendChild(messageElement);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        // Handle user input
-        function processInput() {
-            const inputField = document.getElementById('userInput');
-            const userInput = inputField.value.trim();
-            inputField.value = '';  // Clear input field
-
-            if (userInput === "") return;
-
-            // Add user's message to chat
-            addUserMessage(userInput);
-
-            // Process the input
-            if (userInput.startsWith('predict')) {
-                const x = parseFloat(userInput.replace('predict', '').trim());
-                if (isNaN(x)) {
-                    addBotMessage('Please provide a valid X value for prediction.');
-                    return;
-                }
-
-                predict(x);
-            } else {
-                addBotMessage('Please enter "predict X" to make a prediction.');
-            }
-        }
-
-        // Function to handle CSV upload
         function handleCSVUpload() {
-            const fileInput = document.getElementById('csvInput');
+            const fileInput = document.getElementById('csv-file');
             const file = fileInput.files[0];
 
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(event) {
-                    const csvData = event.target.result;
-                    trainModelFromCSV(csvData);
+                reader.onload = function (e) {
+                    const csv = e.target.result;
+                    const rows = csv.split("\n").slice(1); 
+                    csvData = rows.map(row => {
+                        const [x, y] = row.split(",");
+                        return { x: parseFloat(x), y: parseFloat(y) };
+                    });
+
+                    appendMessage("CSV file uploaded. Training model...", "bot");
+                    trainModel();
                 };
                 reader.readAsText(file);
             }
         }
 
-        // Function to train the model from CSV data
-        async function trainModelFromCSV(csvData) {
-            const rows = csvData.split('\n').map(row => row.split(',').map(Number));
+        async function trainModel() {
+            const xs = csvData.map(row => row.x);
+            const ys = csvData.map(row => row.y);
 
-            const xs = [];
-            const ys = [];
+            const tensorXs = tf.tensor2d(xs, [xs.length, 1]);
+            const tensorYs = tf.tensor2d(ys, [ys.length, 1]);
 
-            rows.forEach(row => {
-                if (row.length === 2 && !isNaN(row[0]) && !isNaN(row[1])) {
-                    xs.push(row[0]);
-                    ys.push(row[1]);
+            model = tf.sequential();
+            model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
+
+            model.compile({ loss: 'meanSquaredError', optimizer: 'sgd' });
+
+            await model.fit(tensorXs, tensorYs, {
+                epochs: 100,
+                callbacks: {
+                    onEpochEnd: (epoch, logs) => {
+                        console.log(`Epoch ${epoch}: loss = ${logs.loss}`);
+                    }
                 }
             });
 
-            if (xs.length === 0) {
-                addBotMessage('No valid data found in CSV.');
-                return;
-            }
-
-            const xsTensor = tf.tensor2d(xs, [xs.length, 1]);
-            const ysTensor = tf.tensor2d(ys, [ys.length, 1]);
-
-            if (!model) await createModel();
-
-            await model.fit(xsTensor, ysTensor, { epochs: 250 });
-
-            addBotMessage(`Model trained on CSV data with ${xs.length} points.`);
-            document.getElementById('uploadMessage').textContent = "CSV uploaded and model trained successfully!";
+            appendMessage("Model trained successfully on the CSV data!", "bot");
         }
 
-        // Function to predict Y value
-        async function predict(inputX) {
-            if (!model) {
-                addBotMessage('Please train the model first.');
-                return;
+        async function handleUserInput() {
+            const inputBox = document.getElementById("user-input");
+            const userInput = inputBox.value;
+
+            if (userInput.toLowerCase().startsWith("predict ")) {
+                const xValue = parseFloat(userInput.split(" ")[1]);
+
+                if (!isNaN(xValue)) {
+                    const prediction = await predictY(xValue);
+                    appendMessage(`Predicted Y value for X=${xValue}: ${prediction.toFixed(2)}`, "bot");
+                } else {
+                    appendMessage("Please provide a valid X value for prediction.", "bot");
+                }
+            } else {
+                appendMessage("Unknown command. Try 'predict X'.", "bot");
             }
 
-            const prediction = model.predict(tf.tensor2d([inputX], [1, 1]));
-            const output = prediction.dataSync()[0];
-            addBotMessage(`Predicted Y value for X=${inputX}: ${output.toFixed(2)}`);
+            inputBox.value = "";
         }
 
-        // Handle 'Enter' key press
+        async function predictY(xValue) {
+            const inputTensor = tf.tensor2d([xValue], [1, 1]);
+            const prediction = model.predict(inputTensor);
+            const predictedValue = (await prediction.data())[0];
+            return predictedValue;
+        }
+
+        function appendMessage(text, type) {
+            const chatBox = document.getElementById("chat-box");
+            const messageDiv = document.createElement("div");
+            messageDiv.classList.add("message", type);
+            messageDiv.textContent = text;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function showPopup() {
+            const popup = document.getElementById("popup");
+            const backdrop = document.getElementById("popup-backdrop");
+            popup.style.display = "block";
+            backdrop.style.display = "block";
+        }
+
+        function closePopup() {
+            const popup = document.getElementById("popup");
+            const backdrop = document.getElementById("popup-backdrop");
+            popup.style.display = "none";
+            backdrop.style.display = "none";
+        }
+
         function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                processInput();
+            if (event.key === "Enter") {
+                handleUserInput();
             }
         }
     </script>
 
 </body>
-</
+</html>
